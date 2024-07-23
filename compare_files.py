@@ -8,46 +8,41 @@ from tqdm import tqdm
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
-
 def compare_csv(file1, file2, column, output, silent=False):
     try:
-        # Get the names of the CSV files
-        file1_name = file1
-        file2_name = file2
-
-        # Get the column to compare from user
-        column_to_compare = column
-
         # Load the CSV files
-        file1 = pd.read_csv(file1_name)
-        file2 = pd.read_csv(file2_name)
+        file1 = pd.read_csv(file1)
+        file2 = pd.read_csv(file2)
 
         # Check if the specified column exists in both files
-        if column_to_compare not in file1.columns:
-            raise ValueError(f"Column '{column_to_compare}' not found in file1.")
-        if column_to_compare not in file2.columns:
-            raise ValueError(f"Column '{column_to_compare}' not found in file2.")
-
-        # Get the original column headers
-        file1_headers = file1.columns.tolist()
-        file2_headers = file2.columns.tolist()
+        if column not in file1.columns:
+            raise ValueError(f"Column '{column}' not found in file1.")
+        if column not in file2.columns:
+            raise ValueError(f"Column '{column}' not found in file2.")
 
         # Sort the files by the column to compare
-        file1 = file1.sort_values(by=column_to_compare)
-        file2 = file2.sort_values(by=column_to_compare)
+        file1 = file1.sort_values(by=column)
+        file2 = file2.sort_values(by=column)
 
         # Get the rows that exist in file1 but not in file2
-        rows_to_delete = file1[~file1[column_to_compare].isin(file2[column_to_compare])]
+        rows_to_delete = file1[~file1[column].isin(file2[column])]
 
         # Get the rows that exist in file2 but not in file1
-        rows_to_add = file2[~file2[column_to_compare].isin(file1[column_to_compare])]
+        rows_to_add = file2[~file2[column].isin(file1[column])]
+
+        # Get the rows that exist in both files
+        rows_no_change = file1[file1[column].isin(file2[column])]
 
         # Create a new DataFrame for the comparison results
         comparison_results = pd.DataFrame({
-            col: rows_to_delete[col].tolist() + rows_to_add[col].tolist()
-            for col in set(file1_headers + file2_headers)
+            col: rows_to_delete[col].tolist() + rows_to_add[col].tolist() + rows_no_change[col].tolist()
+            for col in set(file1.columns.tolist() + file2.columns.tolist())
         })
-        comparison_results['changes'] = ['Deleted'] * len(rows_to_delete) + ['Added'] * len(rows_to_add)
+        comparison_results['changes'] = (
+            ['Deleted'] * len(rows_to_delete) + 
+            ['Added'] * len(rows_to_add) + 
+            ['Not Change'] * len(rows_no_change)
+        )
 
         # Write the comparison results to a new Excel file with original headers
         if not silent:
@@ -66,45 +61,39 @@ def compare_csv(file1, file2, column, output, silent=False):
 
 def compare_excel(file1, file2, sheet1, sheet2, column, output, silent=False):
     try:
-        # Get the names of the Excel files and sheets
-        file1_name = file1
-        file2_name = file2
-        sheet1_name = sheet1
-        sheet2_name = sheet2
-
-        # Get the column to compare from user
-        column_to_compare = column
-
         # Load the Excel files and sheets
-        file1 = pd.read_excel(file1_name, sheet_name=sheet1_name)
-        file2 = pd.read_excel(file2_name, sheet_name=sheet2_name)
+        file1 = pd.read_excel(file1, sheet_name=sheet1)
+        file2 = pd.read_excel(file2, sheet_name=sheet2)
 
         # Check if the specified column exists in both files
-        if column_to_compare not in file1.columns:
-            raise ValueError(f"Column '{column_to_compare}' not found in sheet '{sheet1_name}' of file1.")
-        if column_to_compare not in file2.columns:
-            raise ValueError(f"Column '{column_to_compare}' not found in sheet '{sheet2_name}' of file2.")
-
-        # Get the original column headers
-        file1_headers = file1.columns.tolist()
-        file2_headers = file2.columns.tolist()
+        if column not in file1.columns:
+            raise ValueError(f"Column '{column}' not found in sheet '{sheet1}' of file1.")
+        if column not in file2.columns:
+            raise ValueError(f"Column '{column}' not found in sheet '{sheet2}' of file2.")
 
         # Sort the files by the column to compare
-        file1 = file1.sort_values(by=column_to_compare)
-        file2 = file2.sort_values(by=column_to_compare)
+        file1 = file1.sort_values(by=column)
+        file2 = file2.sort_values(by=column)
 
         # Get the rows that exist in file1 but not in file2
-        rows_to_delete = file1[~file1[column_to_compare].isin(file2[column_to_compare])]
+        rows_to_delete = file1[~file1[column].isin(file2[column])]
 
         # Get the rows that exist in file2 but not in file1
-        rows_to_add = file2[~file2[column_to_compare].isin(file1[column_to_compare])]
+        rows_to_add = file2[~file2[column].isin(file1[column])]
+
+        # Get the rows that exist in both files
+        rows_no_change = file1[file1[column].isin(file2[column])]
 
         # Create a new DataFrame for the comparison results
         comparison_results = pd.DataFrame({
-            col: rows_to_delete[col].tolist() + rows_to_add[col].tolist()
-            for col in set(file1_headers + file2_headers)
+            col: rows_to_delete[col].tolist() + rows_to_add[col].tolist() + rows_no_change[col].tolist()
+            for col in set(file1.columns.tolist() + file2.columns.tolist())
         })
-        comparison_results['changes'] = ['Deleted'] * len(rows_to_delete) + ['Added'] * len(rows_to_add)
+        comparison_results['changes'] = (
+            ['Deleted'] * len(rows_to_delete) + 
+            ['Added'] * len(rows_to_add) + 
+            ['Not Change'] * len(rows_no_change)
+        )
 
         # Write the comparison results to a new Excel file with original headers
         if not silent:
