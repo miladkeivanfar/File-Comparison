@@ -8,8 +8,11 @@ This tool compares two CSV or Excel files based on a specified column and identi
 - Write the comparison results to a new Excel file.
 
 ## Usage
+
 1- `git clone https://github.com/miladkeivanfar/File-Comparison.git`
+
 2- `cd File-Comparison`
+
 3- `pip3 install -r requirements.txt`
 
 ### Compare Excel
